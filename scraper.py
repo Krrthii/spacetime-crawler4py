@@ -15,7 +15,17 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    return list()
+
+    if resp.status == 200:
+        #parse page, store stuff for report, find URLs, remove fragments # from URLs
+        links = re.findall(r'https://+', resp.raw_response.content)
+        for x in range(len(links)):
+            fragment_index = links[x].find('#')
+            if fragment_index != -1:
+                links[x] = links[x][:fragment_index]
+    # else:
+    #     #resp.error to check error
+    return links
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
