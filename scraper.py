@@ -1,5 +1,5 @@
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 from lxml import html
 
 def scraper(url, resp):
@@ -25,10 +25,12 @@ def extract_next_links(url, resp):
         # however, it is a mix of relative and absolute URLs
         # so we need to convert relatives into absolutes
 
-        x = html.fromstring(resp.raw_response.content)
-        x = list(x.iterlinks())
-        for y in x:
-            links.append(y[2])
+        html_string = html.fromstring(resp.raw_response.content)
+        full_links = list(html_string.iterlinks())
+        for y in full_links:
+            if y != "#" and y != "/":
+                new_url = urljoin(url, y[2])
+                links.append(new_url)
         
         """
         links = html.fromstring(resp.raw_response.content)
@@ -53,7 +55,6 @@ def is_valid(url):
             return False
         
         # parsed.netloc must include ".[ics, cs, informatics, stat].uci.edu"
-        ## needs some cleaning up lol
         split_netloc = parsed.netloc.split(".")
         affiliate_index = split_netloc.find("uci")
         if affiliate_index == -1:
