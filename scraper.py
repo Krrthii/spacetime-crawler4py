@@ -1,8 +1,10 @@
 import re
 from urllib.parse import urlparse
+from lxml import html
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
+    print(links) #DEBUG REMOVE THIS LATER
     return [link for link in links if is_valid(link)]
 
 def extract_next_links(url, resp):
@@ -15,14 +17,28 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-
+    links = []
     if resp.status == 200:
         #parse page, store stuff for report, find URLs, remove fragments # from URLs
-        links = re.findall(r'https://+', resp.raw_response.content)
+        
+        # code below extracts links from the webpage
+        # however, it is a mix of relative and absolute URLs
+        # so we need to convert relatives into absolutes
+
+        x = html.fromstring(resp.raw_response.content)
+        x = list(x.iterlinks())
+        for y in x:
+            links.append(y[2])
+        
+        """
+        links = html.fromstring(resp.raw_response.content)
+        links = re.findall(r'https://+', html.fromstring(resp.raw_response.content))
         for x in range(len(links)):
+            print(x)
             fragment_index = links[x].find('#')
             if fragment_index != -1:
                 links[x] = links[x][:fragment_index]
+        """
     # else:
     #     #resp.error to check error
     return links
@@ -35,6 +51,18 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
+        
+        # parsed.netloc must include ".[ics, cs, informatics, stat].uci.edu"
+        ## needs some cleaning up lol
+        split_netloc = parsed.netloc.split(".")
+        affiliate_index = split_netloc.find("uci")
+        if affiliate_index == -1:
+            return False
+        if split_netloc[affiliate_index-1] not in set(["ics", "cs", "informatics", "stat"]):
+            return False
+        if split_netloc[affiliate_index+1] != "edu/":
+            return False
+
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -47,4 +75,5 @@ def is_valid(url):
 
     except TypeError:
         print ("TypeError for ", parsed)
-        raise
+        #if URL could not be parsed correctly, return False
+        return False
