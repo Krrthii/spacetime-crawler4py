@@ -1,10 +1,11 @@
 import re
 from urllib.parse import urlparse, urljoin
 from lxml import html
+from collections import defaultdict
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
-    print(links) #DEBUG REMOVE THIS LATER
+    #print(links) #DEBUG REMOVE THIS LATER
     return [link for link in links if is_valid(link)]
 
 def extract_next_links(url, resp):
@@ -42,13 +43,15 @@ def extract_next_links(url, resp):
         #        a default_dict with each subdomain of ics.uci.edu with a counter of # of unique pages.
 
         # PLAN: add a new class in worker.py to store all the above, with methods to modify all the above. 
-        """
+        
         site_text_list = html_string.xpath('//p')
+        #We will move word_counts to the worker.py module later. Just testing for each URL right now.
+        word_counts = defaultdict(int)
         for body in site_text_list:
             for word in re.split('[^a-zA-z0-9]+', body):
                 if word != "":
-                    allwords.append(word.lower())
-        """
+                    word_counts[word] += 1
+        
 
 
 
@@ -77,9 +80,7 @@ def is_valid(url):
         
         # parsed.netloc must include ".[ics, cs, informatics, stat].uci.edu"
         split_netloc = parsed.netloc.split(".")
-        affiliate_index = split_netloc.find("uci")
-        if affiliate_index == -1:
-            return False
+        affiliate_index = split_netloc.index("uci")
         if split_netloc[affiliate_index-1] not in set(["ics", "cs", "informatics", "stat"]):
             return False
         
@@ -102,4 +103,7 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         #if URL could not be parsed correctly, return False
+        return False
+    except ValueError:
+        #print("ValueError for {}, \"uci\" not found in URL".format(parsed))
         return False
