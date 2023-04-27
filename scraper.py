@@ -22,15 +22,36 @@ def extract_next_links(url, resp):
         #parse page, store stuff for report, find URLs, remove fragments # from URLs
         
         # code below extracts links from the webpage
-        # however, it is a mix of relative and absolute URLs
-        # so we need to convert relatives into absolutes
+        # TO-DO: we still need to handle fragments (DONE, NEEDS TESTING)
+        # TO-DO: test getting content
 
         html_string = html.fromstring(resp.raw_response.content)
         full_links = list(html_string.iterlinks())
         for y in full_links:
             if y != "#" and y != "/":
                 new_url = urljoin(url, y[2])
+                fragment_index = new_url.find('#')
+                if fragment_index != -1:
+                    new_url = new_url[:fragment_index]
                 links.append(new_url)
+
+
+        # TO-DO: get text content of every webpage crawled (worry about low-info checking later)
+        # TO-DO: keep some global counter of unique pages found, page with max_words (and a max_words count),
+        #        a default_dict to count words for the top 50 most common words (ignore English stop words),
+        #        a default_dict with each subdomain of ics.uci.edu with a counter of # of unique pages.
+
+        # PLAN: add a new class in worker.py to store all the above, with methods to modify all the above. 
+        """
+        site_text_list = html_string.xpath('//p')
+        for body in site_text_list:
+            for word in re.split('[^a-zA-z0-9]+', body):
+                if word != "":
+                    allwords.append(word.lower())
+        """
+
+
+
         
         """
         links = html.fromstring(resp.raw_response.content)
@@ -61,8 +82,12 @@ def is_valid(url):
             return False
         if split_netloc[affiliate_index-1] not in set(["ics", "cs", "informatics", "stat"]):
             return False
-        if split_netloc[affiliate_index+1] != "edu/":
+        
+        # Removed the / at the end of "edu/". Since / and # are not part of netloc, "edu" will have nothing after it when you parse the URL.
+        if split_netloc[affiliate_index+1] != "edu":  #edu/, edu#, edu ?? change to regex matching
             return False
+        
+        ## how to avoid traps??
 
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
