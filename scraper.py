@@ -3,12 +3,12 @@ from urllib.parse import urlparse, urljoin
 from lxml import html
 from collections import defaultdict
 
-def scraper(url, resp):
-    links = extract_next_links(url, resp)
+def scraper(url, resp, report_info):
+    links = extract_next_links(url, resp, report_info)
     #print(links) #DEBUG REMOVE THIS LATER
     return [link for link in links if is_valid(link)]
 
-def extract_next_links(url, resp):
+def extract_next_links(url, resp, report_info):
     # Implementation required.
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
@@ -25,6 +25,9 @@ def extract_next_links(url, resp):
         # code below extracts links from the webpage
         # TO-DO: we still need to handle fragments (DONE, NEEDS TESTING)
         # TO-DO: test getting content
+        
+        # incrementing unique_page_count in report_info
+        report_info.increment_unique_page_count()
 
         html_string = html.fromstring(resp.raw_response.content)
         full_links = list(html_string.iterlinks())
@@ -38,19 +41,28 @@ def extract_next_links(url, resp):
 
 
         # TO-DO: get text content of every webpage crawled (worry about low-info checking later)
-        # TO-DO: keep some global counter of unique pages found, page with max_words (and a max_words count),
-        #        a default_dict to count words for the top 50 most common words (ignore English stop words),
+        # TO-DO: done: keep some global counter of unique pages found, page with max_words (and a max_words count),
+        #        done: a default_dict to count words for the top 50 most common words (ignore English stop words),
         #        a default_dict with each subdomain of ics.uci.edu with a counter of # of unique pages.
+
 
         # PLAN: add a new class in worker.py to store all the above, with methods to modify all the above. 
         
+        #counts the # of words in current URL
+        url_word_count = 0
+
         site_text_list = html_string.xpath('//p')
-        #We will move word_counts to the worker.py module later. Just testing for each URL right now.
-        word_counts = defaultdict(int)
+        # counts words in the URL and adds each word into the word_frequency dict in ReportInformation().
         for body in site_text_list:
-            for word in re.split('[^a-zA-z0-9]+', body):
+            for word in re.split('[^a-zA-z0-9]+', body.text_content()):
                 if word != "":
-                    word_counts[word] += 1
+                    report_info.increment_word_frequency(word)
+                    url_word_count += 1
+    
+        # Compares the # of words in this URL to the current max.
+        # Replaces the max_url and the max_words if the current URL has more words.
+        if url_word_count > report_info.get_max_words():
+            report_info.set_max_words_url(url, url_word_count)
         
 
 
@@ -88,7 +100,14 @@ def is_valid(url):
         if split_netloc[affiliate_index+1] != "edu":  #edu/, edu#, edu ?? change to regex matching
             return False
         
-        ## how to avoid traps??
+        ## TO-DO:avoid traps!!: 
+        ##       infinite redirections: keep list of visited links
+        ##
+        ##       duplicates/near-duplicates(fingerprint algorithm using sim-hash)
+        ##          # define a similarity threshold
+        ##          duplicate = any(abs(hash(content)) - hash(visitedContent) < threshold for vContent in visitedContent)
+        ##          if false: add page to list of visited content
+        
 
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
