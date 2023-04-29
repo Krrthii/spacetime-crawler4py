@@ -33,6 +33,8 @@ class Worker(Thread):
                 f"using cache {self.config.cache_server}.")
             scraped_urls = scraper.scraper(tbd_url, resp, report_info, visited_urls)
             for scraped_url in scraped_urls:
+                ##### Megan
+                report_info.add_unique_page(scraped_url);
                 self.frontier.add_url(scraped_url)
             self.frontier.mark_url_complete(tbd_url)
             time.sleep(self.config.time_delay)
@@ -70,7 +72,7 @@ class Worker(Thread):
         #stores everything we need for our report
         def __init__(self):
             self.word_frequency = defaultdict(int) # dict holds (word, int)
-            #self.unique_pages = []
+            self.unique_pages = []
             self.unique_page_count = 0
             self.max_words = 0
             self.max_words_url = ""
@@ -88,6 +90,10 @@ class Worker(Thread):
         
         def increment_word_frequency(self, word):
             self.word_frequency[word] += 1
+
+        ##### Megan
+        def add_unique_page(self, url):
+            self.unique_pages.append(url);
 
         def get_unique_page_count(self):
             return self.unique_page_count

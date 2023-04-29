@@ -6,7 +6,7 @@ from collections import defaultdict
 def scraper(url, resp, report_info, visited_urls):
     links = extract_next_links(url, resp, report_info, visited_urls)
     #print(links) #DEBUG REMOVE THIS LATER
-    return [link for link in links if is_valid(link)]
+    return [link for link in links if check_similarity(link, visited_urls) if is_valid(link)]
 
 def extract_next_links(url, resp, report_info, visited_urls):
     # Implementation required.
@@ -96,6 +96,10 @@ def extract_next_links(url, resp, report_info, visited_urls):
         return links
     except:
         return list()
+
+def check_similarity(url, visited_urls):
+    #return similarity score, compare with similarity threshold
+    for page in 
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
