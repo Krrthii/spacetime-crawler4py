@@ -23,7 +23,7 @@ class Worker(Thread):
         report_info = self.ReportInformation()
         #visited_urls_count counts the # of times the url (without the query) is visited
         visited_urls_count = defaultdict(int)
-        #visited_urls_hash stoes the hash of every url visited.
+        #visited_urls_hash stores the hash of every url visited.
         visited_urls_hash = dict()
         while True:
             tbd_url = self.frontier.get_tbd_url()

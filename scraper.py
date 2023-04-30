@@ -2,7 +2,6 @@ import re
 from urllib.parse import urlparse, urljoin
 from lxml import html
 from collections import defaultdict
-import requests
 
 def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash):
     links = extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash)
