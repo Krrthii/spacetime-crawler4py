@@ -21,7 +21,10 @@ class Worker(Thread):
 
     def run(self):
         report_info = self.ReportInformation()
-        visited_urls = defaultdict(int)
+        #visited_urls_count counts the # of times the url (without the query) is visited
+        visited_urls_count = defaultdict(int)
+        #visited_urls_hash stoes the hash of every url visited.
+        visited_urls_hash = dict()
         while True:
             tbd_url = self.frontier.get_tbd_url()
             if not tbd_url:
@@ -31,10 +34,8 @@ class Worker(Thread):
             self.logger.info(
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")
-            scraped_urls = scraper.scraper(tbd_url, resp, report_info, visited_urls)
+            scraped_urls = scraper.scraper(tbd_url, resp, report_info, visited_urls_count, visited_urls_hash)
             for scraped_url in scraped_urls:
-                ##### Megan
-                report_info.add_unique_page(scraped_url);
                 self.frontier.add_url(scraped_url)
             self.frontier.mark_url_complete(tbd_url)
             time.sleep(self.config.time_delay)
@@ -90,10 +91,6 @@ class Worker(Thread):
         
         def increment_word_frequency(self, word):
             self.word_frequency[word] += 1
-
-        ##### Megan
-        def add_unique_page(self, url):
-            self.unique_pages.append(url);
 
         def get_unique_page_count(self):
             return self.unique_page_count

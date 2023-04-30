@@ -3,12 +3,12 @@ from urllib.parse import urlparse, urljoin
 from lxml import html
 from collections import defaultdict
 
-def scraper(url, resp, report_info, visited_urls):
-    links = extract_next_links(url, resp, report_info, visited_urls)
+def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash):
+    links = extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash)
     #print(links) #DEBUG REMOVE THIS LATER
-    return [link for link in links if check_similarity(link, visited_urls) if is_valid(link)]
+    return [link for link in links if (check_similarity(link, resp, visited_urls_hash) and is_valid(link))]
 
-def extract_next_links(url, resp, report_info, visited_urls):
+def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash):
     # Implementation required.
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
@@ -33,13 +33,17 @@ def extract_next_links(url, resp, report_info, visited_urls):
             #add current url increment to visited_urls
             parsed_url = urlparse(url)
             url_without_query = parsed_url.scheme + "://" + parsed_url.netloc + parsed_url.path
-            visited_urls[url_without_query] += 1
+            visited_urls_count[url_without_query] += 1
             # check if url is a subdomain of ics.uci.edu (for report)
             if ("ics.uci.edu" in parsed_url.netloc):
                 sub_domain = parsed_url.scheme + "://" + parsed_url.netloc
                 report_info.increment_sub_domains_page_count(sub_domain)
 
             html_string = html.fromstring(resp.raw_response.content)
+            # hashing webpage and storing it
+            url_content = html_string.text_content()
+            visited_urls_hash[url] = hash(url_content)
+            # getting a list of links found in the webpage
             full_links = list(html_string.iterlinks())
             for y in full_links:
                 if y != "#" and y != "/":
@@ -50,7 +54,7 @@ def extract_next_links(url, resp, report_info, visited_urls):
                     parsed_new_url = urlparse(url)
                     new_url_without_query = parsed_new_url.scheme + "://" + parsed_new_url.netloc + parsed_new_url.path
                     # Only adds URL to frontier if it has been crawled through under 20 times.
-                    if visited_urls[new_url_without_query] < 21:
+                    if visited_urls_count[new_url_without_query] < 21:
                         # Check if the url does not have another URL inside it
                         if ("https" not in parsed_new_url.path) and ("http" not in parsed_new_url.path):
                             links.append(new_url)
@@ -99,21 +103,17 @@ def extract_next_links(url, resp, report_info, visited_urls):
     except:
         return list()
 
-def check_similarity(url, visited_urls):
+def check_similarity(url, resp, visited_urls_hash):
     #checks for duplicates and near-duplicates
     #find similarity score, compare with similarity threshold
     #return true/false if pass similarity test
     threshold = 0.9
 
-    response = requests.get(url)
-    parsed_content = html.fromstring(response.content)
+    parsed_content = html.fromstring(resp.raw_response.content)
     url_content = parsed_content.text_content()
 
-    for page in visted_urls:
-        response = requests.get(page)
-        parsed_content = html.fromstring(response.content)
-        visited_content = parsed_content.text_content()
-        is_similar = abs(hash(url_content) - hash(visited_content))
+    for page_hash in visited_urls_hash.values():
+        is_similar = abs(hash(url_content) - page_hash)
         if (is_similar > threshold):
             return False
         
