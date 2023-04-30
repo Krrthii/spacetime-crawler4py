@@ -6,7 +6,7 @@ from collections import defaultdict
 def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash, max_redirects):
     links = extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash)
     #print(links) #DEBUG REMOVE THIS LATER
-    return [link for link in links if (check_similarity(link, resp, visited_urls_hash) and is_valid(link))]
+    return [link for link in links if is_valid(link)]
 
 def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash, max_redirects):
     # Implementation required.
@@ -18,6 +18,9 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
+    if not check_similarity(url, resp, visited_urls_hash):
+        return list()
+
     links = []
     try:
         if resp.status == 200:
@@ -114,17 +117,19 @@ def check_similarity(url, resp, visited_urls_hash):
     #checks for duplicates and near-duplicates
     #find similarity score, compare with similarity threshold
     #return true/false if pass similarity test
-    threshold = 0.9
+    threshold = 0.0
 
     parsed_content = html.fromstring(resp.raw_response.content)
     url_content = parsed_content.text_content()
 
     for page_hash in visited_urls_hash.values():
         is_similar = abs(hash(url_content) - page_hash)
-        if (is_similar > threshold):
+        if (is_similar < threshold):
             return False
-
+        
         return True
+    except AttributeError:
+        return False
 
 
 def is_valid(url):
