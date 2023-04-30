@@ -3,12 +3,12 @@ from urllib.parse import urlparse, urljoin
 from lxml import html
 from collections import defaultdict
 
-def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash):
+def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash, max_redirects):
     links = extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash)
     #print(links) #DEBUG REMOVE THIS LATER
     return [link for link in links if (check_similarity(link, resp, visited_urls_hash) and is_valid(link))]
 
-def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash):
+def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash, max_redirects):
     # Implementation required.
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
@@ -83,9 +83,6 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
             # Replaces the max_url and the max_words if the current URL has more words.
             if url_word_count > report_info.get_max_words():
                 report_info.set_max_words_url(url, url_word_count)
-            
-
-
 
             
             """
@@ -97,8 +94,18 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
                 if fragment_index != -1:
                     links[x] = links[x][:fragment_index]
             """
-        # else:
-        #     #resp.error to check error
+        
+        #this means there is a redirection
+        #set max_redirects and keep redirection count
+        elif (resp.status == 302):
+            if max_redirects > 0:
+                next_url = resp.headers.get("location")
+                links.append(next_url)
+                extract_next_links(next_url, requests.get(next_url), report_info, visited_urls_count, visited_urls_hash, max_redirects-1)
+            else:
+                print("Max redirects exceeded for URL: ", url)
+                
+
         return links
     except:
         return list()
@@ -107,16 +114,16 @@ def check_similarity(url, resp, visited_urls_hash):
     #checks for duplicates and near-duplicates
     #find similarity score, compare with similarity threshold
     #return true/false if pass similarity test
-    threshold = 0.0
+    threshold = 0.9
 
     parsed_content = html.fromstring(resp.raw_response.content)
     url_content = parsed_content.text_content()
 
     for page_hash in visited_urls_hash.values():
         is_similar = abs(hash(url_content) - page_hash)
-        if (is_similar < threshold):
+        if (is_similar > threshold):
             return False
-        
+
         return True
 
 
