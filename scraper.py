@@ -111,16 +111,18 @@ def check_similarity(url, resp, visited_urls_hash):
     #find similarity score, compare with similarity threshold
     #return true/false if pass similarity test
     threshold = 0.0
-
-    parsed_content = html.fromstring(resp.raw_response.content)
-    url_content = parsed_content.text_content()
-    # for now this just checks if this page is the same as other pages.
-    for page_hash in visited_urls_hash.values():
-        is_similar = abs(hash(url_content) - page_hash)
-        if (is_similar <= threshold):
-            return False
-        
-    return True
+    try:
+        parsed_content = html.fromstring(resp.raw_response.content)
+        url_content = parsed_content.text_content()
+        # for now this just checks if this page is the same as other pages.
+        for page_hash in visited_urls_hash.values():
+            is_similar = abs(hash(url_content) - page_hash)
+            if (is_similar <= threshold):
+                return False
+            
+        return True
+    except AttributeError:
+        return False
 
 
 def is_valid(url):
