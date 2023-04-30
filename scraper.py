@@ -2,11 +2,12 @@ import re
 from urllib.parse import urlparse, urljoin
 from lxml import html
 from collections import defaultdict
+import requests
 
 def scraper(url, resp, report_info, visited_urls):
     links = extract_next_links(url, resp, report_info, visited_urls)
     #print(links) #DEBUG REMOVE THIS LATER
-    return [link for link in links if check_similarity(link, visited_urls) if is_valid(link)]
+    return [link for link in links if (check_similarity(link, visited_urls) and is_valid(link))]
 
 def extract_next_links(url, resp, report_info, visited_urls):
     # Implementation required.
@@ -109,7 +110,7 @@ def check_similarity(url, visited_urls):
     parsed_content = html.fromstring(response.content)
     url_content = parsed_content.text_content()
 
-    for page in visted_urls:
+    for page in visited_urls:
         response = requests.get(page)
         parsed_content = html.fromstring(response.content)
         visited_content = parsed_content.text_content()
