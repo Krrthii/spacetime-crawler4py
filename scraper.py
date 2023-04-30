@@ -51,7 +51,9 @@ def extract_next_links(url, resp, report_info, visited_urls):
                     new_url_without_query = parsed_new_url.scheme + "://" + parsed_new_url.netloc + parsed_new_url.path
                     # Only adds URL to frontier if it has been crawled through under 20 times.
                     if visited_urls[new_url_without_query] < 21:
-                        links.append(new_url)
+                        # Check if the url does not have another URL inside it
+                        if ("https" not in parsed_new_url.path) and ("http" not in parsed_new_url.path):
+                            links.append(new_url)
 
 
             # TO-DO: get text content of every webpage crawled (worry about low-info checking later)
