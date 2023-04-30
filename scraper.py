@@ -120,7 +120,7 @@ def check_similarity(url, resp, visited_urls_hash):
         if (is_similar <= threshold):
             return False
         
-        return True
+    return True
 
 
 def is_valid(url):
