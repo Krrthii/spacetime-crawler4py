@@ -98,15 +98,19 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
                     links[x] = links[x][:fragment_index]
             """
         
+        # new code for redirection, handled in report as well
         #this means there is a redirection
         #set max_redirects and keep redirection count
         elif (resp.status == 302):
             if max_redirects > 0:
                 next_url = resp.headers.get("location")
+                report_info.add_redirected_url(url, new_url)
                 links.append(next_url)
                 extract_next_links(next_url, requests.get(next_url), report_info, visited_urls_count, visited_urls_hash, max_redirects-1)
             else:
                 print("Max redirects exceeded for URL: ", url)
+                report_info.log_error(url, "Max redirects exceeded")
+                report_info.increment_urls_failed()
                 
 
         return links
