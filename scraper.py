@@ -6,7 +6,7 @@ from collections import defaultdict
 def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash):
     links = extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash)
     #print(links) #DEBUG REMOVE THIS LATER
-    return [link for link in links if (check_similarity(link, resp, visited_urls_hash) and is_valid(link))]
+    return [link for link in links if is_valid(link)]
 
 def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash):
     # Implementation required.
@@ -18,6 +18,9 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
+    if not check_similarity(url, resp, visited_urls_hash):
+        return list()
+
     links = []
     try:
         if resp.status == 200:
@@ -111,10 +114,10 @@ def check_similarity(url, resp, visited_urls_hash):
 
     parsed_content = html.fromstring(resp.raw_response.content)
     url_content = parsed_content.text_content()
-
+    # for now this just checks if this page is the same as other pages.
     for page_hash in visited_urls_hash.values():
         is_similar = abs(hash(url_content) - page_hash)
-        if (is_similar < threshold):
+        if (is_similar <= threshold):
             return False
         
         return True
