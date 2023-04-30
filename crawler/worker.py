@@ -79,6 +79,8 @@ class Worker(Thread):
             self.max_words = 0
             self.max_words_url = ""
             self.sub_domains_page_count = defaultdict(int) # dict holds (url, int)
+            self.urls_failed_count = 0
+            self.redirected_urls = {} # dict holds (from_url, to_url)
 
         #methods to store/retrieve above information
         def get_max_words(self):
@@ -108,3 +110,18 @@ class Worker(Thread):
 
         def get_sub_domains_page_count(self):
             return self.sub_domains_page_count
+        
+        def log_error(self, url, error_msg):
+            print(f"Error: {error_msg} for URL: {url}")
+            
+        def increment_urls_failed(self):
+            self.urls_failed_count += 1
+            
+        def get_urls_failed_count(self):
+            return self.urls_failed_count
+        
+        def add_redirected_url(self, from_url, to_url):
+            self.redirected_urls[from_url] = to_url
+            
+        def get_redirected_urls(self):
+            return self.redirected_urls
