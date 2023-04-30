@@ -37,15 +37,17 @@ class Frontier(object):
 
     def _parse_save_file(self):
         ''' This function can be overridden for alternate saving techniques. '''
-        total_count = len(self.save)
-        tbd_count = 0
-        for url, completed in self.save.values():
-            if not completed and is_valid(url):
-                self.to_be_downloaded.append(url)
-                tbd_count += 1
-        self.logger.info(
-            f"Found {tbd_count} urls to be downloaded from {total_count} "
-            f"total urls discovered.")
+        ## check if file is not empty!!
+        if os.stat(self.config.save_file).st_size != 0:
+            total_count = len(self.save)
+            tbd_count = 0
+            for url, completed in self.save.values():
+                if not completed and is_valid(url):
+                    self.to_be_downloaded.append(url)
+                    tbd_count += 1
+            self.logger.info(
+                f"Found {tbd_count} urls to be downloaded from {total_count} "
+                f"total urls discovered.")
 
     def get_tbd_url(self):
         try:
