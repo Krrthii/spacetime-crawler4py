@@ -56,8 +56,8 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
                         new_url = new_url[:fragment_index]
                     parsed_new_url = urlparse(url)
                     new_url_without_query = parsed_new_url.scheme + "://" + parsed_new_url.netloc + parsed_new_url.path
-                    # Only adds URL to frontier if it has been crawled through under 6 times.
-                    if visited_urls_count[new_url_without_query] < 6:
+                    # Only adds URL to frontier if it has been crawled through under 11 times.
+                    if visited_urls_count[new_url_without_query] < 11:
                         # Check if the url does not have another URL inside it
                         if ("https" not in parsed_new_url.path) and ("http" not in parsed_new_url.path):
                             links.append(new_url)
