@@ -25,8 +25,9 @@ class Worker(Thread):
         visited_urls_count = defaultdict(int)
         #visited_urls_hash stores the hash of every url visited.
         visited_urls_hash = dict()
-        max_redirects = 6
+        redirected_urls = dict()
         while True:
+            max_redirects = 6
             tbd_url = self.frontier.get_tbd_url()
             if not tbd_url:
                 self.logger.info("Frontier is empty. Stopping Crawler.")
@@ -35,6 +36,25 @@ class Worker(Thread):
             self.logger.info(
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")
+            
+            # Handle redirects idk.
+            while (resp.status == 302):
+                if max_redirects > 0:
+                    next_url = resp.headers.get("location")
+                    redirected_urls[tbd_url] = next_url
+                    resp = download(next_url, self.config, self.logger)
+                    self.logger.info(
+                        f"Downloaded {next_url}, status <{resp.status}>, "
+                        f"using cache {self.config.cache_server}.")
+                    max_redirects -= 1
+                else:
+                    print(f"Error: Max redirects exceeded for URL: {tbd_url}")
+                    self.frontier.mark_url_complete(tbd_url)
+                    time.sleep(self.config.time_delay)
+                    continue
+                    
+
+
             scraped_urls = scraper.scraper(tbd_url, resp, report_info, visited_urls_count, visited_urls_hash, max_redirects)
             for scraped_url in scraped_urls:
                 self.frontier.add_url(scraped_url)
@@ -110,18 +130,4 @@ class Worker(Thread):
 
         def get_sub_domains_page_count(self):
             return self.sub_domains_page_count
-        
-        def log_error(self, url, error_msg):
-            print(f"Error: {error_msg} for URL: {url}")
             
-        def increment_urls_failed(self):
-            self.urls_failed_count += 1
-            
-        def get_urls_failed_count(self):
-            return self.urls_failed_count
-        
-        def add_redirected_url(self, from_url, to_url):
-            self.redirected_urls[from_url] = to_url
-            
-        def get_redirected_urls(self):
-            return self.redirected_urls
