@@ -3,12 +3,12 @@ from urllib.parse import urlparse, urljoin
 from lxml import html
 from collections import defaultdict
 
-def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash, max_redirects):
-    links = extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash, max_redirects)
+def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash):
+    links = extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash)
     #print(links) #DEBUG REMOVE THIS LATER
     return [link for link in links if is_valid(link)]
 
-def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash, max_redirects):
+def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash):
     # Implementation required.
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
