@@ -1,6 +1,6 @@
 import re
 from urllib.parse import urlparse, urljoin
-from lxml import html
+from lxml import html, etree
 from collections import defaultdict
 
 def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash):
@@ -126,11 +126,7 @@ def check_similarity(url, resp, visited_urls_hash):
     try:
         threshold = 0.0
 
-        # first check if there is no content on the page
         content = resp.raw_response.content
-        if not content:
-            return False
-
         parsed_content = html.fromstring(content)
         url_content = parsed_content.text_content()
 
@@ -140,6 +136,9 @@ def check_similarity(url, resp, visited_urls_hash):
                 return False
             
         return True
+    # ParserError happens when document is empty.
+    except etree.ParserError:
+        return False
     except AttributeError:
         return False
 
