@@ -27,6 +27,7 @@ class Worker(Thread):
         visited_urls_hash = dict()
         redirected_urls = dict()
         while True:
+            skip_url = False
             max_redirects = 6
             tbd_url = self.frontier.get_tbd_url()
             if not tbd_url:
@@ -38,10 +39,19 @@ class Worker(Thread):
                 f"using cache {self.config.cache_server}.")
             
             # Handle redirects idk.
-            while (resp.status == 302):
+            while (301 <= resp.status <= 308):
                 if max_redirects > 0:
-                    next_url = resp.headers.get("location")
+                    next_url = resp.url
                     redirected_urls[tbd_url] = next_url
+                    #If new URL is not in allowed domains, skips to next URL in frontier.
+                    #If it is, downloads it and runs this loop again to check for redirect.
+                    if ".ics.uci.edu" not in next_url:
+                        if ".cs.uci.edu" not in next_url:
+                            if ".informatics.uci.edu" not in next_url:
+                                if ".stat.uci.edu" not in next_url:
+                                    skip_url = True
+                                    break
+
                     resp = download(next_url, self.config, self.logger)
                     self.logger.info(
                         f"Downloaded {next_url}, status <{resp.status}>, "
@@ -50,10 +60,13 @@ class Worker(Thread):
                 else:
                     print(f"Error: Max redirects exceeded for URL: {tbd_url}")
                     self.frontier.mark_url_complete(tbd_url)
-                    time.sleep(self.config.time_delay)
-                    continue
+                    skip_url = True
+                    break
                     
-
+            #If URL not in allowed domains or if max_redirect is hit, skips to next URL in frontier.
+            if skip_url:
+                time.sleep(self.config.time_delay)
+                continue
 
             scraped_urls = scraper.scraper(tbd_url, resp, report_info, visited_urls_count, visited_urls_hash)
             for scraped_url in scraped_urls:
