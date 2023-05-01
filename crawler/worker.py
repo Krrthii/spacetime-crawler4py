@@ -55,7 +55,7 @@ class Worker(Thread):
                     
 
 
-            scraped_urls = scraper.scraper(tbd_url, resp, report_info, visited_urls_count, visited_urls_hash, max_redirects)
+            scraped_urls = scraper.scraper(tbd_url, resp, report_info, visited_urls_count, visited_urls_hash)
             for scraped_url in scraped_urls:
                 self.frontier.add_url(scraped_url)
             self.frontier.mark_url_complete(tbd_url)
