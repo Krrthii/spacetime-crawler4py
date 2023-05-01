@@ -37,14 +37,6 @@ class Frontier(object):
 
     def _parse_save_file(self):
         ''' This function can be overridden for alternate saving techniques. '''
-        ## check if file is not empty!!
-        #if not os.path.exists(self.config.save_file):
-            #for url in self.config.seed_urls:
-                #self.add_url(url)
-        #if os.path.exists(self.config.save_file) and os.stat(self.config.save_file).st_size == 0:
-            #self.logger.warning(f"Save file {self.config.save_file} is empty.")
-            #return
-        #else:
         total_count = len(self.save)
         tbd_count = 0
         for url, completed in self.save.values():
