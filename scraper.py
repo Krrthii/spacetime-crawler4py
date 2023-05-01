@@ -124,7 +124,12 @@ def check_similarity(url, resp, visited_urls_hash):
     try:
         threshold = 0.0
 
-        parsed_content = html.fromstring(resp.raw_response.content)
+        # first check if there is no content on the page
+        content = resp.raw_response.content
+        if not content:
+            return False
+
+        parsed_content = html.fromstring(content)
         url_content = parsed_content.text_content()
 
         for page_hash in visited_urls_hash.values():
