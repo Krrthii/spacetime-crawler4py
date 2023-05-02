@@ -78,9 +78,11 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
             # counts words in the URL and adds each word into the word_frequency dict in ReportInformation().
             for body in site_text_list:
                 for word in re.split('[^a-zA-z0-9]+', body.text_content()):
-                    if word != "":
-                        report_info.increment_word_frequency(word)
-                        url_word_count += 1
+                    lowercase_word = word.lower()
+                    if lowercase_word != "":
+                        if len(lowercase_word) > 1:
+                            report_info.increment_word_frequency(lowercase_word)
+                            url_word_count += 1
         
             # Compares the # of words in this URL to the current max.
             # Replaces the max_url and the max_words if the current URL has more words.
