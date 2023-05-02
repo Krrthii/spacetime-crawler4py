@@ -81,8 +81,9 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
                     lowercase_word = word.lower()
                     if lowercase_word != "":
                         if len(lowercase_word) > 1:
-                            report_info.increment_word_frequency(lowercase_word)
-                            url_word_count += 1
+                            if not lowercase_word.isnumeric():
+                                report_info.increment_word_frequency(lowercase_word)
+                                url_word_count += 1
         
             # Compares the # of words in this URL to the current max.
             # Replaces the max_url and the max_words if the current URL has more words.
