@@ -3,10 +3,17 @@ from urllib.parse import urlparse, urljoin
 from lxml import html, etree
 from collections import defaultdict
 
+'''
+Function to store all valid links inside a list
+This function is called later in the worker.py file in order to
+pass the collection of valid urls to frontier.py in order for program to scrape text
+from the urls
+'''
 def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash):
     links = extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash)
-    #print(links) #DEBUG REMOVE THIS LATER
+    #return list of valid links
     return [link for link in links if is_valid(link)]
+
 
 def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash):
     # Implementation required.
@@ -17,6 +24,7 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
     # resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
+    
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     if not check_similarity(url, resp, visited_urls_hash):
         return list()
