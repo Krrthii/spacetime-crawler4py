@@ -32,6 +32,7 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
             
             # incrementing unique_page_count in report_info
             report_info.increment_unique_page_count()
+            report_info.add_unique_page(url)
 
             #add current url increment to visited_urls
             parsed_url = urlparse(url)

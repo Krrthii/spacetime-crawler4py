@@ -81,7 +81,7 @@ class Worker(Thread):
         print("page with max words #:", report_info.get_max_words())
         #sorting top 50 words while filtering out stopwords
         word_dict = report_info.get_word_frequency()
-        stopwords = "a about above after again against all am an and any are aren t as at be because been before being below between both but by can't cannot could couldn did didn do does doesn doing don down during each few for from further had hadn has hasn have haven having he he d ll s her here hers herself him himself his how i m ve if in into is isn it its itself let me more most mustn my myself no nor not of off on once only or other ought our ours ourselves out over own same shan she should shouldn so some such than that the their theirs them themselves then there these they this those through to too under until up very was wasn we were weren what when where which while who whom why with won would wouldn you your yours yourself yourselves".split(" ")
+        stopwords = "www div http https a about above after again against all am an and any are aren t as at be because been before being below between both but by can't cannot could couldn did didn do does doesn doing don down during each few for from further had hadn has hasn have haven having he he d ll s her here hers herself him himself his how i m ve if in into is isn it its itself let me more most mustn my myself no nor not of off on once only or other ought our ours ourselves out over own same shan she should shouldn so some such than that the their theirs them themselves then there these they this those through to too under until up very was wasn we were weren what when where which while who whom why with won would wouldn you your yours yourself yourselves".split(" ")
         all_words = list(word_dict.keys())
         for word in stopwords:
             try:
@@ -91,8 +91,8 @@ class Worker(Thread):
 
         all_words_sorted = sorted(all_words, key=(lambda x: (-word_dict[x], x)))
 
-        print("top 50 words:")
-        for y in range(50):
+        print("top words:")
+        for y in range(len(all_words_sorted)):
             print("{}, {}".format(all_words_sorted[y], word_dict[all_words_sorted[y]]))
 
         # listing subdomains of ics.uci.edu
@@ -101,6 +101,9 @@ class Worker(Thread):
         all_subdomains_sorted = sorted(all_subdomains)
         for subdomain in all_subdomains_sorted:
             print("{}, {}".format(subdomain, report_info.get_sub_domains_page_count()[subdomain]))
+        print("unique pages list:")
+        for page in report_info.get_unique_pages():
+            print(page)
 
 
     class ReportInformation():
@@ -134,6 +137,12 @@ class Worker(Thread):
         def increment_unique_page_count(self):
             self.unique_page_count += 1
         
+        def add_unique_page(self, url):
+            self.unique_pages.append(url)
+
+        def get_unique_pages(self):
+            return self.unique_pages
+
         def set_max_words_url(self, url, word_count):
             self.max_words_url = url
             self.max_words = word_count
