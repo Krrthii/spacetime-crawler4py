@@ -136,7 +136,7 @@ def check_similarity(url, resp, visited_urls_hash):
 
         for page_hash in visited_urls_hash.values():
             is_similar = abs(hash(url_content) - page_hash)
-            if (is_similar < threshold):
+            if (is_similar <= threshold):
                 return False
             
         return True
