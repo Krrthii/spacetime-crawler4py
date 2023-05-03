@@ -17,7 +17,7 @@ def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash):
     return [link for link in links if is_valid(link)]
 
 '''
-Function is called from the scraper function of this file in order 
+Function is called from scraper function of scraper.py in order 
 to extract links from the given webpage's content and return the links in a list
 '''
 def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash):
@@ -53,11 +53,9 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
     try:
         if resp.status == 200:
             #parse page, store stuff for report, find URLs, remove fragments # from URLs
-            
             # code below extracts links from the webpage
             # TO-DO: we still need to handle fragments (DONE, NEEDS TESTING)
             # TO-DO: test getting content
-            
             # incrementing unique_page_count in report_info
             '''
             Increment count of visited urls
@@ -68,7 +66,8 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
             report_info.add_unique_page(url)
 
             '''
-            Parse the current url, remove the query part, and increment
+            Parse the current url using the `urlparse()` method
+            of the urllib library, remove the query part, and increment
             the count of the visited url in the `visited_urls_count` dictionary
             '''
             parsed_url = urlparse(url)
@@ -122,10 +121,7 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
             # TO-DO: done: keep some global counter of unique pages found, page with max_words (and a max_words count),
             #        done: a default_dict to count words for the top 50 most common words (ignore English stop words),
             #        a default_dict with each subdomain of ics.uci.edu with a counter of # of unique pages.
-
-
             # PLAN: add a new class in worker.py to store all the above, with methods to modify all the above. 
-            
             #counts the # of words in current URL
             url_word_count = 0
 
@@ -205,19 +201,34 @@ def check_similarity(url, resp, visited_urls_hash):
     except AttributeError:
         return False
 
-
+'''
+Function called from the scraper function of scraper.py in order to 
+determine whether a URL should be crawled
+Returns True if the URL should be crawled or False if not
+'''
 def is_valid(url):
-    # Decide whether to crawl this url or not. 
-    # If you decide to crawl it, return True; otherwise return False.
-    # There are already some conditions that return False.
-    # not valid if file is empty
+    '''
+    If TypeError happens when the URL could not be parsed properly, return False
+    If ValueError happens when "uci" or "." is not found in the URL, return False
+    Else, proceed
+    '''
     try:
+        '''
+        Parse the URL by using the `urlparse()` function from the urllib library and check
+        if the parsed URL's pattern contains either "http" or "https".
+        If not return False.
+        '''
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
         
         
-        #check for traps with infinite repeating paths
+        '''
+        Check for traps with infinite repeating paths.
+        Split the parsed URLs path by the "/" character and count the
+        occurances of each path segment using path_count, a default dictionary
+        If any path segment appears more than once, return False
+        '''
         path_count = defaultdict(int)
         path_words = parsed.path.split("/")
         for x in path_words:
@@ -226,14 +237,22 @@ def is_valid(url):
             if count > 1:
                 return False
 
-
+        '''
+        Check if the parsed URL's netloc includes ".[ics, cs, informatics, stat].uci.edu"
+        Split the netloc by the "." character and find the index of "uci" in the resulting list
+        If the element before "uci" is not in the set of valid subdomains, return False.
+        '''
         # parsed.netloc must include ".[ics, cs, informatics, stat].uci.edu"
         split_netloc = parsed.netloc.split(".")
         affiliate_index = split_netloc.index("uci")
         if split_netloc[affiliate_index-1] not in set(["ics", "cs", "informatics", "stat"]):
             return False
         
+        '''
+        Check if the element after "uci" is "edu".
+        If not, return False.
         # Removed the / at the end of "edu/". Since / and # are not part of netloc, "edu" will have nothing after it when you parse the URL.
+        '''
         if split_netloc[affiliate_index+1] != "edu":  #edu/, edu#, edu ?? change to regex matching
             return False
         
@@ -245,7 +264,12 @@ def is_valid(url):
         ##          duplicate = any(abs(hash(content)) - hash(visitedContent) < threshold for vContent in visitedContent)
         ##          if false: add page to list of visited content
         
-
+        '''
+        Use regex to match the URL's path against a list of excluded file types
+        such as images and executables.
+        If the path matches the regular expression, return False.
+        Otherwise, return True.
+        '''
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
