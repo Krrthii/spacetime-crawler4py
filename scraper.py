@@ -4,18 +4,21 @@ from lxml import html, etree
 from collections import defaultdict
 
 '''
-Function to store all valid links inside a list
-This function is called later in the worker.py file in order to
-pass the collection of valid urls to frontier.py in order for program to scrape text
-from the urls
+Function to return all valid links from a webpage inside a list
+This function is called later in the worker.py file in order to pass
+the collection of valid urls to frontier.py in order for program to scrape text from the links
 '''
 def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash):
+    '''
+    Call the `extract_next_links` function to extract all links from the webpage as strings.
+    Then, create a new list containing only links that meet certain criteria 
+    '''
     links = extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash)
-    #return list of valid links
     return [link for link in links if is_valid(link)]
 
 '''
-Function to 
+Function is called from the scraper function of this file in order 
+to extract links from the given webpage's content and return the links in a list
 '''
 def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash):
     # Implementation required.
@@ -27,10 +30,25 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
 
-    # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
+    '''
+    Call the `check_similarity` function which checks if the content of the webpage at the
+    given URL is too similar to any previously visited webpages.
+    If the content is too similar to a previously visited webpage,
+    return an empty list
+    If the content is different enough, continue to
+    extract the links from the webpage
+    '''
     if not check_similarity(url, resp, visited_urls_hash):
         return list()
 
+    '''
+    Create empty list to hold extracted links.
+    Then check if the response status is 200 (OK) and if so,
+    proceed to extract links from the webpage's content,
+    remove fragments from URLs, and increment the unique page count
+    in the `report_info` object.
+    If response status is not 200, return an empty list.
+    '''
     links = []
     try:
         if resp.status == 200:
@@ -41,24 +59,50 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
             # TO-DO: test getting content
             
             # incrementing unique_page_count in report_info
+            '''
+            Increment count of visited urls
+            for the current url in the `visited_urls_count` dictionary
+            in the report_info object
+            '''
             report_info.increment_unique_page_count()
             report_info.add_unique_page(url)
 
-            #add current url increment to visited_urls
+            '''
+            Parse the current url, remove the query part, and increment
+            the count of the visited url in the `visited_urls_count` dictionary
+            '''
             parsed_url = urlparse(url)
             url_without_query = parsed_url.scheme + "://" + parsed_url.netloc + parsed_url.path
             visited_urls_count[url_without_query] += 1
-            # check if url is a subdomain of ics.uci.edu (for report)
+            '''
+            If current url is a subdomain of ics.uci.edu, increment the count 
+            of subdomains in the `report_info` object
+            '''
             if ("ics.uci.edu" in parsed_url.netloc):
                 sub_domain = parsed_url.scheme + "://" + parsed_url.netloc
                 report_info.increment_sub_domains_page_count(sub_domain)
-
+            '''
+            Extract the content of the webpage using
+            the `resp.raw_response.content` attribute and convert it into
+            an HTML string
+            '''
             html_string = html.fromstring(resp.raw_response.content)
-            # hashing webpage and storing it
+            '''
+            Calculate the hash value of the webpage's content and store it
+            in the `visited_urls_hash` dictionary
+            '''
             url_content = html_string.text_content()
             visited_urls_hash[url] = hash(url_content)
-            # getting a list of links found in the webpage
+            '''
+            Extract all links from the HTML string and iterate through them
+            '''
             full_links = list(html_string.iterlinks())
+            '''
+            For each link, remove the fragment part and parse the new url.
+            Check if the new url has been crawled through less than 11 times,
+            and if it doesn't contain another URL inside.
+            If both conditions are true, append the new URL to the `links` list
+            '''
             for y in full_links:
                 if y != "#" and y != "/":
                     new_url = urljoin(url, y[2])
@@ -85,6 +129,11 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
             #counts the # of words in current URL
             url_word_count = 0
 
+            '''
+            Extract the text content of the webpage and split it into a list of words
+            Iterate trhough the words and check if they are not numeric and have more than one character.
+            Increment the word frequency in the `report_info` object for each valid word and update the URL word count
+            '''
             site_text_list = html_string.xpath('//p')
             # counts words in the URL and adds each word into the word_frequency dict in ReportInformation().
             for body in site_text_list:
@@ -96,11 +145,14 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
                                 report_info.increment_word_frequency(lowercase_word)
                                 url_word_count += 1
         
-            # Compares the # of words in this URL to the current max.
-            # Replaces the max_url and the max_words if the current URL has more words.
+            '''
+            Compare the URL word count with the current maximum word count.
+            If the URL word count is greater, update the maximum word count 
+            and the corresponding URL in the `report_info` object.
+            Then return the `links` list containing the extracted and filtered links
+            '''
             if url_word_count > report_info.get_max_words():
                 report_info.set_max_words_url(url, url_word_count)
-
         return links
     except:
         return list()
