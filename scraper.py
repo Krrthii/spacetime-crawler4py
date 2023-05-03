@@ -14,7 +14,9 @@ def scraper(url, resp, report_info, visited_urls_count, visited_urls_hash):
     #return list of valid links
     return [link for link in links if is_valid(link)]
 
-
+'''
+Function to 
+'''
 def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_hash):
     # Implementation required.
     # url: the URL that was used to get the page
@@ -24,7 +26,7 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
     # resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
-    
+
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     if not check_similarity(url, resp, visited_urls_hash):
         return list()
@@ -99,56 +101,53 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
             if url_word_count > report_info.get_max_words():
                 report_info.set_max_words_url(url, url_word_count)
 
-            
-            """
-            links = html.fromstring(resp.raw_response.content)
-            links = re.findall(r'https://+', html.fromstring(resp.raw_response.content))
-            for x in range(len(links)):
-                print(x)
-                fragment_index = links[x].find('#')
-                if fragment_index != -1:
-                    links[x] = links[x][:fragment_index]
-            """
-        
-        # new code for redirection, handled in report as well
-        #this means there is a redirection
-        #set max_redirects and keep redirection count
-        """
-        elif (resp.status == 302):
-            if max_redirects > 0:
-                next_url = resp.headers.get("location")
-                report_info.add_redirected_url(url, new_url)
-                links.append(next_url)
-                extract_next_links(next_url, requests.get(next_url), report_info, visited_urls_count, visited_urls_hash, max_redirects-1)
-            else:
-                print("Max redirects exceeded for URL: ", url)
-                report_info.log_error(url, "Max redirects exceeded")
-                report_info.increment_urls_failed()
-        """
-                
-
         return links
     except:
         return list()
 
+'''
+Function that checks whether the content of a webpage located at the given url 
+is similar or nearly identical to any previously visited webpages, based 
+on a similarity threshold.
+'''
 def check_similarity(url, resp, visited_urls_hash):
-    #checks for duplicates and near-duplicates
-    #find similarity score, compare with similarity threshold
-    #return true/false if pass similarity test
     try:
+        '''
+        Set similarity threshold to 0.0
+        '''
         threshold = 0.0
-
+        '''
+        Extract the content of the webpage from `resp` object
+        using the `content` attribute and the `html` module from the `lxml` library
+        Then, convert content to text format using `text_content()` method
+        '''
         content = resp.raw_response.content
         parsed_content = html.fromstring(content)
         url_content = parsed_content.text_content()
 
+        '''
+        Iterate trhough the values of `visted_urls_hash` which is a dictionary
+        containing the hash values of previously visited webpages and calculate
+        the absolute difference between the hash of the current webpage's content
+        and hash of each previously visited webpage's content
+        '''
+        '''
+        If the absolute difference is less than or equal to the similarity threshold,
+        function returns False which shows that the current webpage is too similar
+        to a previously visited webpage
+        '''
         for page_hash in visited_urls_hash.values():
             is_similar = abs(hash(url_content) - page_hash)
             if (is_similar <= threshold):
                 return False
-            
         return True
-    # ParserError happens when document is empty.
+        '''
+        ParserError happens when document is empty.
+        The function catches and handles two exceptions
+        both of which indicate that the webpage content is not parsable
+        or is missing.
+        In this case, function returns False
+        '''
     except etree.ParserError:
         return False
     except AttributeError:
