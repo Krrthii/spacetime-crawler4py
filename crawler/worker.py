@@ -38,13 +38,13 @@ class Worker(Thread):
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")
             
-            # Handle redirects idk.
+            #check status for redirect, and handle if needed.
             while (301 <= resp.status <= 308):
                 if max_redirects > 0:
                     next_url = resp.url
                     redirected_urls[tbd_url] = next_url
-                    #If new URL is not in allowed domains, skips to next URL in frontier.
-                    #If it is, downloads it and runs this loop again to check for redirect.
+                    #if next_url is not in allowed domains, skips to next URL in frontier.
+                    #if it is allowed, downloads it and runs this loop again to check for redirect.
                     if ".ics.uci.edu" not in next_url:
                         if ".cs.uci.edu" not in next_url:
                             if ".informatics.uci.edu" not in next_url:
@@ -63,7 +63,7 @@ class Worker(Thread):
                     skip_url = True
                     break
                     
-            #If URL not in allowed domains or if max_redirect is hit, skips to next URL in frontier.
+            #if URL not in allowed domains or if max_redirect is hit, skips to next URL in frontier.
             if skip_url:
                 time.sleep(self.config.time_delay)
                 continue
@@ -73,7 +73,10 @@ class Worker(Thread):
                 self.frontier.add_url(scraped_url)
             self.frontier.mark_url_complete(tbd_url)
             time.sleep(self.config.time_delay)
-        # report info here? idk
+
+        '''
+        Print out the required information for the report, based on what is gather in report_info.
+
         #unique pages
         print("unique page count:", report_info.get_unique_page_count())
         #max words and the page with the max words
@@ -92,7 +95,7 @@ class Worker(Thread):
         all_words_sorted = sorted(all_words, key=(lambda x: (-word_dict[x], x)))
 
         print("top words:")
-        for y in range(len(all_words_sorted)):
+        for y in range(300):
             print("{}, {}".format(all_words_sorted[y], word_dict[all_words_sorted[y]]))
 
         # listing subdomains of ics.uci.edu
@@ -101,10 +104,7 @@ class Worker(Thread):
         all_subdomains_sorted = sorted(all_subdomains)
         for subdomain in all_subdomains_sorted:
             print("{}, {}".format(subdomain, report_info.get_sub_domains_page_count()[subdomain]))
-        print("unique pages list:")
-        for page in report_info.get_unique_pages():
-            print(page)
-
+        '''
 
     class ReportInformation():
         #stores everything we need for our report
