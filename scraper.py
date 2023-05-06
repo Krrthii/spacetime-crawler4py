@@ -34,35 +34,32 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
                 sub_domain = parsed_url.scheme + "://" + parsed_url.netloc
                 report_info.increment_sub_domains_page_count(sub_domain)
                 
-            '''Extract the content of the webpage using the `resp.raw_response.content` attribute and convert it into an HTML string'''
             html_string = html.fromstring(resp.raw_response.content)
             '''Calculate the hash value of the webpage's content and store it in the `visited_urls_hash` dictionary'''
             url_content = html_string.text_content()
             visited_urls_hash[url] = hash(url_content)
             '''Extract all links from the HTML string and iterate through them'''
             full_links = list(html_string.iterlinks())
-            '''For each link, remove the fragment part and parse the new url. Check if the new url has been crawled through less than 
-            11 times, and if it doesn't contain another URL inside. If both conditions are true, append the new URL to the `links` list'''
             for y in full_links:
                 if y != "#" and y != "/":
                     new_url = urljoin(url, y[2])
+                    '''Remove fragment from URL if it exists'''
                     fragment_index = new_url.find('#')
                     if fragment_index != -1:
                         new_url = new_url[:fragment_index]
                     parsed_new_url = urlparse(url)
                     new_url_without_query = parsed_new_url.scheme + "://" + parsed_new_url.netloc + parsed_new_url.path
-                    # only adds URL to frontier if it has been crawled through under 11 times.
+                    '''only adds URL to frontier if it has been crawled through under 11 times and there is not a URL inside the URL'''
                     if visited_urls_count[new_url_without_query] < 11:
-                        # check if the url does not have another URL inside it
                         if ("https" not in parsed_new_url.path) and ("http" not in parsed_new_url.path):
                             links.append(new_url)
 
 
             url_word_count = 0
 
-            '''Extract the text content of the webpage and split it into a list of words
-            Iterate trhough the words and check if they are not numeric and have more than one character.
-            Increment the word frequency in the `report_info` object for each valid word and update the URL word count
+            '''Extract the text content of the webpage. Iterate through the words and increment the
+            number if times that word is found in all webpages (word_frequency) and the number of words 
+            in the current URL (url_word_count).
             '''
             site_text_list = html_string.xpath('//p')
             # counts words in the URL and adds each word into the word_frequency dict in ReportInformation().
@@ -75,12 +72,7 @@ def extract_next_links(url, resp, report_info, visited_urls_count, visited_urls_
                                 report_info.increment_word_frequency(lowercase_word)
                                 url_word_count += 1
         
-            '''
-            Compare the URL word count with the current maximum word count.
-            If the URL word count is greater, update the maximum word count 
-            and the corresponding URL in the `report_info` object.
-            Then return the `links` list containing the extracted and filtered links
-            '''
+            '''If the url_word_count is higher than the current max number of words in a URL, update it'''
             if url_word_count > report_info.get_max_words():
                 report_info.set_max_words_url(url, url_word_count)
         return links
@@ -94,25 +86,10 @@ on a similarity threshold.
 '''
 def check_similarity(url, resp, visited_urls_hash):
     try:
-        '''
-        Set similarity threshold to 0.0
-        '''
         threshold = 0.0
-        '''
-        Extract the content of the webpage from `resp` object
-        using the `content` attribute and the `html` module from the `lxml` library
-        Then, convert content to text format using `text_content()` method
-        '''
         content = resp.raw_response.content
         parsed_content = html.fromstring(content)
         url_content = parsed_content.text_content()
-
-        '''
-        Iterate trhough the values of `visted_urls_hash` which is a dictionary
-        containing the hash values of previously visited webpages and calculate
-        the absolute difference between the hash of the current webpage's content
-        and hash of each previously visited webpage's content
-        '''
         '''
         If the absolute difference is less than or equal to the similarity threshold,
         function returns False which shows that the current webpage is too similar
@@ -123,29 +100,20 @@ def check_similarity(url, resp, visited_urls_hash):
             if (is_similar <= threshold):
                 return False
         return True
-        '''
-        ParserError happens when document is empty.
-        The function catches and handles two exceptions
-        both of which indicate that the webpage content is not parsable
-        or is missing.
-        In this case, function returns False
-        '''
+
     except etree.ParserError:
+        '''If the page content is empty, return False'''
         return False
     except AttributeError:
+        '''If the hash cannot be retrieved, return False'''
         return False
 
 '''Function called from the scraper function of scraper.py in order to 
 determine whether a URL should be crawled
 Returns True if the URL should be crawled or False if not'''
 def is_valid(url):
-    '''If TypeError happens when the URL could not be parsed properly, return False
-    If ValueError happens when "uci" or "." is not found in the URL, return False
-    Else, proceed'''
     try:
-        '''Parse the URL by using the `urlparse()` function from the urllib library and check
-        if the parsed URL's pattern contains either "http" or "https".
-        If not return False.'''
+        '''check if the scheme contains http or https'''
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
@@ -191,9 +159,9 @@ def is_valid(url):
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
 
     except TypeError:
+        '''If the URL could not be parsed correctly, return False'''
         print ("TypeError for ", parsed)
-        #if URL could not be parsed correctly, return False
         return False
     except ValueError:
-        #if 'uci' was not found in the netloc
+        '''If 'uci' could not be found in the netloc, return False'''
         return False

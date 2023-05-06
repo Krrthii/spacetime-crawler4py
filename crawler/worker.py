@@ -20,12 +20,11 @@ class Worker(Thread):
 
 
     def run(self):
+        '''report_info stores information to print out for the report'''
         report_info = self.ReportInformation()
-        #visited_urls_count counts the # of times the url (without the query) is visited
+        '''visited_urls_count and visited_urls_hash store URLs to check for duplicate pages'''
         visited_urls_count = defaultdict(int)
-        #visited_urls_hash stores the hash of every url visited.
         visited_urls_hash = dict()
-        redirected_urls = dict()
         while True:
             skip_url = False
             max_redirects = 6
@@ -38,13 +37,12 @@ class Worker(Thread):
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")
             
-            #check status for redirect, and handle if needed.
+            '''Check resp.status for redirect, and handle if it is between 301 and 308.'''
             while (301 <= resp.status <= 308):
                 if max_redirects > 0:
                     next_url = resp.url
-                    redirected_urls[tbd_url] = next_url
-                    #if next_url is not in allowed domains, skips to next URL in frontier.
-                    #if it is allowed, downloads it and runs this loop again to check for redirect.
+                    '''If next_url is not in allowed domains, skips to next URL in the frontier.
+                    if it is allowed, downloads it and runs this loop again to check for redirect.'''
                     if ".ics.uci.edu" not in next_url:
                         if ".cs.uci.edu" not in next_url:
                             if ".informatics.uci.edu" not in next_url:
@@ -58,12 +56,13 @@ class Worker(Thread):
                         f"using cache {self.config.cache_server}.")
                     max_redirects -= 1
                 else:
+                    '''If the URL gets redirected more than 6 times, skip to the next URL in the frontier.'''
                     print(f"Error: Max redirects exceeded for URL: {tbd_url}")
                     self.frontier.mark_url_complete(tbd_url)
                     skip_url = True
                     break
                     
-            #if URL not in allowed domains or if max_redirect is hit, skips to next URL in frontier.
+            '''If redirected URL not in allowed domains or if max_redirect is hit, skips to the next URL in frontier.'''
             if skip_url:
                 time.sleep(self.config.time_delay)
                 continue
@@ -107,7 +106,7 @@ class Worker(Thread):
         '''
 
     class ReportInformation():
-        #stores everything we need for our report
+        '''Stores all the information we need for our report'''
         def __init__(self):
             self.word_frequency = defaultdict(int) # dict holds (word, int)
             self.unique_pages = []
@@ -118,7 +117,7 @@ class Worker(Thread):
             self.urls_failed_count = 0
             self.redirected_urls = {} # dict holds (from_url, to_url)
 
-        #methods to store/retrieve above information
+        '''Methods to store/retrieve above information'''
         def get_max_words(self):
             return self.max_words
         
